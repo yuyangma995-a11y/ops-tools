@@ -1,0 +1,62 @@
+name: Build Windows exe
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g. v2.0.0)'
+        required: true
+        default: 'v2.0.0'
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Get version
+        id: get_version
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Install pkg
+        run: npm install -g @yao-pkg/pkg
+
+      - name: Build Windows exe
+        shell: bash
+        run: |
+          VERSION=${{ steps.get_version.outputs.VERSION }}
+          mkdir -p dist
+          pkg installer.js --target node18-win-x64 --output "dist/yuziyuan-ops-installer-${VERSION}.exe" --compress GZip
+          ls -lh dist/
+
+      - name: Create Release and upload exe
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.get_version.outputs.VERSION }}
+          name: "${{ steps.get_version.outputs.VERSION }} - 渔之源运营助手"
+          body: |
+            ## 安装说明
+            1. 下载 exe 文件，双击运行
+            2. 按提示完成安装
+            3. 联系管理员获取飞书登录权限
+          files: dist/yuziyuan-ops-installer-*.exe
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
