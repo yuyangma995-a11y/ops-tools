@@ -1,6 +1,6 @@
 {
-    "version": "2.0.0",
-    "notes": "飞书登录 + 白名单 + 管理后台",
-    "installerUrl": "https://github.com/yuyangma995-a11y/ops-tools/releases/download/v2.0.0/yuziyuan-ops-installer-v2.0.0.exe",
-    "publishedAt": "2026-06-09"
+        "version": "2.1.0",
+        "notes": "新增每日销售数据看板（抖音商品卡），支持多日趋势、Top10、个人销售、新链接、异常检测",
+        "installerUrl": "https://github.com/yuyangma995-a11y/ops-tools/releases/download/v2.1.0/yuziyuan-ops-installer-v2.1.0.exe",
+        "publishedAt": "2026-06-09"
 }
