@@ -186,7 +186,6 @@ async function downloadAndExtractOpsTools() {
     child_process.execSync(`unzip -q "${tmpZip}" -d "${tmpExtract}"`, { stdio: 'inherit' });
   }
   try { fs.rmSync(tmpZip, { force: true }); } catch {}
-  // zip 根目录可能是 ops-tools/ 或直接是文件
   const entries = fs.readdirSync(tmpExtract);
   const opsDir = path.join(tmpExtract, 'ops-tools');
   if (entries.length === 1 && fs.statSync(path.join(tmpExtract, entries[0])).isDirectory()) {
@@ -204,7 +203,6 @@ async function waitForNewService() {
     const oldWorkbench = await fetchText('http://127.0.0.1:9999/%E5%B7%A5%E4%BD%9C%E5%8F%B0/index.html');
     const visual = await fetchText('http://127.0.0.1:9999/visual-prompt/index.html');
     const oldVisual = await fetchText('http://127.0.0.1:9999/%E8%A7%86%E8%A7%89Prompt%E5%B7%A5%E4%BD%9C%E5%8F%B0/index.html');
-    
     const xlsx = await fetchText('http://127.0.0.1:9999/visual-prompt/vendor/xlsx.full.min.js');
     const ops = await fetchText('http://127.0.0.1:9999/ops-war-room/index.html');
     if (
@@ -225,13 +223,23 @@ async function waitForNewService() {
 function copyFreshFiles() {
   fs.copyFileSync(path.join(srcRoot, 'helper', 'helper.js'), path.join(destRoot, 'helper.js'));
   fs.copyFileSync(path.join(srcRoot, 'helper', 'apps.config.json'), path.join(destRoot, 'apps.config.json'));
-  // v2.0: 复制登录页、管理后台、配置模板
   const loginHtml = path.join(srcRoot, 'login.html');
   if (fs.existsSync(loginHtml)) { fs.copyFileSync(loginHtml, path.join(destRoot, 'login.html')); console.log('Copied: login.html'); }
   const adminDir = path.join(srcRoot, 'admin');
   if (fs.existsSync(adminDir)) { copyDir(adminDir, path.join(destRoot, 'admin')); console.log('Copied: admin/'); }
   const feishuExample = path.join(srcRoot, 'helper', 'feishu.config.example.json');
   if (fs.existsSync(feishuExample)) { fs.copyFileSync(feishuExample, path.join(destRoot, 'feishu.config.example.json')); }
+  // 自动写入飞书配置（仅当 feishu.config.json 不存在时才写，避免覆盖管理员自定义配置）
+  const feishuConfigPath = path.join(destRoot, 'feishu.config.json');
+  if (!fs.existsSync(feishuConfigPath)) {
+    const feishuConfig = {
+      appId: 'cli_aaac1d3c0878dcce',
+      appSecret: 'wOFOFfdOHicuVwaXf08RjejgvCVKNJoD',
+      redirectUri: 'http://127.0.0.1:9999/auth/callback'
+    };
+    fs.writeFileSync(feishuConfigPath, JSON.stringify(feishuConfig, null, 2), 'utf8');
+    console.log('Created: feishu.config.json');
+  }
   const whitelistExample = path.join(srcRoot, 'helper', 'auth.whitelist.example.json');
   if (fs.existsSync(whitelistExample)) { fs.copyFileSync(whitelistExample, path.join(destRoot, 'auth.whitelist.example.json')); }
   console.log('Copied: helper.js');
@@ -249,7 +257,6 @@ function copyFreshFiles() {
   console.log('Node.exe:', process.execPath);
   console.log('Install to:', destRoot);
 
-  // 下载 ops-tools 源码（从 GitHub Release）
   try {
     srcRoot = await downloadAndExtractOpsTools();
     console.log('ops-tools extracted to:', srcRoot);
