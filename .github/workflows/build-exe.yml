@@ -1,15 +1,15 @@
 name: Build Windows exe
 
 on:
-  push:
-    tags:
-      - 'v*'
   workflow_dispatch:
     inputs:
       version:
         description: 'Version tag (e.g. v2.0.0)'
         required: true
         default: 'v2.0.0'
+  push:
+    tags:
+      - 'v*'
 
 jobs:
   build:
@@ -43,19 +43,10 @@ jobs:
           VERSION=${{ steps.get_version.outputs.VERSION }}
           mkdir -p dist
           pkg installer.js --target node18-win-x64 --output "dist/yuziyuan-ops-installer-${VERSION}.exe" --compress GZip
-          echo "exe size:"
+          echo "=== Build output ==="
           ls -lh dist/
 
-      - name: Package ops-tools source zip
-        shell: bash
-        run: |
-          VERSION=${{ steps.get_version.outputs.VERSION }}
-          cd ops-tools
-          7z a -tzip "../dist/ops-tools-src.zip" . -x!*.secret -x!feishu.config.json -x!api.config.json -x!auth.whitelist.json -x!auth.machines.json
-          echo "zip size:"
-          ls -lh ../dist/
-
-      - name: Create Release and upload assets
+      - name: Upload exe to Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.get_version.outputs.VERSION }}
@@ -63,13 +54,9 @@ jobs:
           body: |
             ## 安装说明
             1. 下载 `yuziyuan-ops-installer-${{ steps.get_version.outputs.VERSION }}.exe`
-            2. 双击运行，等待安装完成
+            2. 双击运行，等待安装完成（需联网，自动下载工具文件约 5MB）
             3. 联系管理员获取飞书登录权限
-
-            ⚠️ 安装过程需要联网（自动从 GitHub 下载工具文件）
-          files: |
-            dist/yuziyuan-ops-installer-*.exe
-            dist/ops-tools-src.zip
+          files: dist/yuziyuan-ops-installer-*.exe
           draft: false
           prerelease: false
         env:
